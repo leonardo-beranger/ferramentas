@@ -2,7 +2,36 @@ import streamlit as st
 import pandas as pd
 import biblioteca as bib
 from io import BytesIO
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import make_pipeline
 import os
+
+def categorizador(palavras_categorizadas, treinamento):
+    # Criar uma lista para armazenar as palavras e categorias do treinamento
+    palavras_treinamento = []
+    categorias = []
+    
+    # Iterar pelas linhas do dataframe de treinamento
+    for _, row in treinamento.iterrows():
+        categoria = row.iloc[0]  # Primeira coluna é a categoria
+        palavras_chave = row.iloc[1:].dropna().values  # As colunas seguintes são palavras-chave
+        
+        # Adicionar cada palavra-chave à lista de palavras e associar à categoria
+        for palavra in palavras_chave:
+            palavras_treinamento.append(palavra)
+            categorias.append(categoria)
+
+    # Criar um modelo de classificação usando TF-IDF + Regressão Logística
+    model = make_pipeline(TfidfVectorizer(), LogisticRegression())
+    
+    # Treinar o modelo com as palavras-chave e suas categorias
+    model.fit(palavras_treinamento, categorias)
+    
+    # Prever as categorias das palavras fornecidas
+    categorias_preditas = model.predict(palavras_categorizadas)
+    
+    return categorias_preditas
 
 # Configurações iniciais
 st.set_page_config(page_title="Categorizador", 
@@ -50,7 +79,7 @@ with col2:
 
             if categorizar:
                 try:
-                    lista = bib.categorizador(palavras_categorizadas=cat[coluna].tolist(), treinamento=trein)
+                    lista = categorizador(palavras_categorizadas=cat[coluna].tolist(), treinamento=trein)
 
                     cat['categorias'] = lista
 
