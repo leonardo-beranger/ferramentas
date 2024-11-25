@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import os
-import biblioteca as bib
 from io import BytesIO
 
 # Função para salvar e gerar o arquivo Excel em memória
@@ -12,6 +11,24 @@ def to_excel(df):
         writer.close()
     output.seek(0)
     return output
+
+# Função para consolidar arquivos Excel de um diretório
+def consolidar_excel(diretorio):
+    arquivos_excel = [f for f in os.listdir(diretorio) if f.endswith('.xlsx') or f.endswith('.xls')]
+    dfs = []
+
+    for arquivo in arquivos_excel:
+        caminho_arquivo = os.path.join(diretorio, arquivo)
+        df = pd.read_excel(caminho_arquivo)
+        dfs.append(df)
+
+    # Concatenando todos os dataframes em um único
+    df_consolidado = pd.concat(dfs, ignore_index=True)
+
+    # Resetando o índice e descartando o índice anterior como coluna
+    df_consolidado = df_consolidado.reset_index(drop=True)
+    
+    return df_consolidado
 
 # Configuração da página Streamlit
 st.set_page_config(page_title="Consolidação de Excel", 
@@ -26,7 +43,7 @@ diretorio = st.text_input("Informe o caminho do diretório contendo os arquivos 
 # Se o caminho for válido
 if diretorio and os.path.isdir(diretorio):
     # Consolida os arquivos Excel
-    df_consolidado = bib.consolidar_excel(diretorio)
+    df_consolidado = consolidar_excel(diretorio)
 
     # Verifica se há dados para mostrar
     if not df_consolidado.empty:
